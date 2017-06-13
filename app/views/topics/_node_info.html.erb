@@ -31,6 +31,12 @@
           <li class="<%= ' active' if action_name == 'recent' %>">
             <%= link_to('最新发布', main_app.recent_topics_path, data: { 'turbolinks-action': 'replace' }) %>
           </li>
+          <li class="<%= ' active' if action_name == 'weekly' %>">
+            <%= link_to('一周热门', main_app.weekly_topics_path, data: { 'turbolinks-action': 'replace' }) %>
+          </li>
+          <li class="<%= ' active' if action_name == 'daily' %>">
+            <%= link_to('24小时热门', main_app.daily_topics_path, data: { 'turbolinks-action': 'replace' }) %>
+          </li>
         </ul>
       <% end %>
     </div>

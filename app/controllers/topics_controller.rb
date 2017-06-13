@@ -60,6 +60,20 @@ class TopicsController < ApplicationController
     end
   end
 
+  # weekly rank
+  def weekly
+    @topics = Topic.limit(10)
+    @topics = @topics.page(params[:page])
+    render action: "index"
+  end
+
+  # daily rank
+  def daily
+    @topics = Topic.limit(10).order(id: :asc)
+    @topics = @topics.page(params[:page])
+    render action: "index"
+  end
+
   # GET /topics/favorites
   def favorites
     @topics = current_user.favorite_topics.includes(:user)

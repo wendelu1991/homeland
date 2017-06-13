@@ -69,6 +69,8 @@ Rails.application.routes.draw do
       post :action
     end
     collection do
+      get :daily
+      get :weekly
       get :no_reply
       get :popular
       get :excellent
