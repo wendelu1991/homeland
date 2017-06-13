@@ -106,6 +106,18 @@ class Topic < ApplicationRecord
     Setting.node_ids_hide_in_topics_index.to_s.split(",").collect(&:to_i)
   end
 
+  def self.daily_rank
+    @topics = Topic.order(id: :asc).limit(10)
+  end
+
+  def self.weekly_rank
+    @topics = Topic.limit(10)
+  end
+
+  # def self.rank(type = :daily)
+
+  # end
+
   before_save :store_cache_fields
   def store_cache_fields
     self.node_name = node.try(:name) || ""
