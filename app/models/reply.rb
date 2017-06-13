@@ -51,12 +51,13 @@ class Reply < ApplicationRecord
     end
   end
 
-  after_commit :async_create_reply_notify, on: :create, unless: -> { system_event? }
+  after_commit :async_create_reply_notify, :check_vote_chars_for_like_topic, :incr_topic_score,
+               on: :create, unless: -> { system_event? }
+
   def async_create_reply_notify
     NotifyReplyJob.perform_later(id)
   end
 
-  after_commit :check_vote_chars_for_like_topic, on: :create, unless: -> { system_event? }
   def check_vote_chars_for_like_topic
     return unless self.upvote?
     user.like(topic)
@@ -144,4 +145,11 @@ class Reply < ApplicationRecord
     return false if opts[:user].blank?
     self.create(opts)
   end
+
+  private
+
+    def incr_topic_score
+      topic.score_incr_by_reply
+    end
+
 end

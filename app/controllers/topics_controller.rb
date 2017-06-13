@@ -101,6 +101,7 @@ class TopicsController < ApplicationController
     render_404 if @topic.deleted?
 
     @topic.hits.incr(1)
+    @topic.score_incr_by_hit
     @node = @topic.node
     @show_raw = params[:raw] == "1"
     @can_reply = can?(:create, Reply)

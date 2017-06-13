@@ -10,6 +10,9 @@ CORRECT_CHARS = [
 ]
 
 class Topic < ApplicationRecord
+  HIT_SCORE = 1
+  REPLY_SCORE = 3
+
   include MarkdownBody
   include SoftDelete
   include Mentionable
@@ -31,6 +34,8 @@ class Topic < ApplicationRecord
   validates :user_id, :title, :body, :node_id, presence: true
 
   counter :hits, default: 0
+  hash_key :daily_scores
+  hash_key :weekly_scores
 
   delegate :login, to: :user, prefix: true, allow_nil: true
   delegate :body, to: :last_reply, prefix: true, allow_nil: true
@@ -114,9 +119,29 @@ class Topic < ApplicationRecord
     @topics = Topic.limit(10)
   end
 
-  # def self.rank(type = :daily)
+  def daily_ranks
+    hours = (1..24).map { |i| (Time.current.beginning_of_hour-i.hour).to_i  }
 
-  # end
+    daily_scores.bulk_get(*hours).values.reverse.compact.map.with_index(1) { |e, i| e.to_i * i }.sum
+  end
+
+  def weekly_ranks
+    days = (1..7).map { |i| (Time.current.beginning_of_day-i.day).to_i  }
+
+    weekly_scores.bulk_get(*days).values.reverse.compact.map.with_index(1) { |e, i| e.to_i * i }.sum
+  end
+
+  def score_incr_by_hit
+    daily_scores.incr(Time.current.beginning_of_hour.to_i, HIT_SCORE)
+    weekly_scores.incr(Time.current.beginning_of_day.to_i, HIT_SCORE)
+  end
+
+  def score_incr_by_reply
+    daily_scores.incr(Time.current.beginning_of_hour.to_i, REPLY_SCORE)
+    weekly_scores.incr(Time.current.beginning_of_day.to_i, REPLY_SCORE)
+  end
+
+###
 
   before_save :store_cache_fields
   def store_cache_fields
