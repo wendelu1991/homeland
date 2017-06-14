@@ -149,7 +149,7 @@ class Reply < ApplicationRecord
   private
 
     def incr_topic_score
-      topic.score_incr_by_reply
+      topic.score_incr_by(:reply)
     end
 
 end
