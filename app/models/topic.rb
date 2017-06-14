@@ -36,6 +36,8 @@ class Topic < ApplicationRecord
   counter :hits, default: 0
   hash_key :daily_scores
   hash_key :weekly_scores
+  sorted_set :daily_ranks, global: true
+  sorted_set :weekly_ranks, global: true
 
   delegate :login, to: :user, prefix: true, allow_nil: true
   delegate :body, to: :last_reply, prefix: true, allow_nil: true
@@ -112,42 +114,34 @@ class Topic < ApplicationRecord
   end
 
   def self.daily_rank
-    @topics = Topic.order(id: :asc).limit(10)
+    @topics = Topic.order(id: :asc).limit(10) ##_ modify later
   end
 
   def self.weekly_rank
-    @topics = Topic.limit(10)
+    @topics = Topic.limit(10) ##_ modify later
   end
 
-  def daily_ranks
+  def calc_daily_rank
     hours = (1..24).map { |i| (Time.current.beginning_of_hour-i.hour).to_i.to_s  }
 
-    daily_scores.bulk_get(*hours).values.reverse.compact.map.with_index(1) { |e, i| e.to_i * i }.sum
+    score = daily_scores.bulk_get(*hours).values.reverse.compact.map.with_index(1) { |e, i| e.to_i * i }.sum
+
+    daily_ranks[id] = score
   end
 
-  def weekly_ranks
+  def calc_weekly_rank
     days = (1..7).map { |i| (Time.current.beginning_of_day-i.day).to_i.to_s  }
 
-    weekly_scores.bulk_get(*days).values.reverse.compact.map.with_index(1) { |e, i| e.to_i * i }.sum
+    score = weekly_scores.bulk_get(*days).values.reverse.compact.map.with_index(1) { |e, i| e.to_i * i }.sum
+
+    weekly_ranks[id] = score
   end
 
   def score_incr_by(action)
-    score = { hit: HIT_SCORE, reply: REPLY_SCORE }[action]
+    return unless score = { hit: HIT_SCORE, reply: REPLY_SCORE }[action]
     daily_scores.incr(Time.current.beginning_of_hour.to_i, score)
     weekly_scores.incr(Time.current.beginning_of_day.to_i, score)
   end
-
-  # def score_incr_by_hit
-  #   daily_scores.incr(Time.current.beginning_of_hour.to_i, HIT_SCORE)
-  #   weekly_scores.incr(Time.current.beginning_of_day.to_i, HIT_SCORE)
-  # end
-
-  # def score_incr_by_reply
-  #   daily_scores.incr(Time.current.beginning_of_hour.to_i, REPLY_SCORE)
-  #   weekly_scores.incr(Time.current.beginning_of_day.to_i, REPLY_SCORE)
-  # end
-
-###
 
   before_save :store_cache_fields
   def store_cache_fields
