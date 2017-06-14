@@ -134,7 +134,7 @@ class Topic < ApplicationRecord
   def self.sorted_topics(sorted_ids)
     topics = find(sorted_ids)
     topics_hash = topics.each_with_object({}) { |topic, t_hash| t_hash[topic.id] = topic }
-    sorted_topics = sorted_ids.map { |id| topics_hash[id] }
+    sorted_topics = sorted_ids.map { |id| topics_hash[id.to_i] }
     Kaminari.paginate_array(sorted_topics)
   end
   private_class_method :sorted_topics
