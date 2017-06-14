@@ -114,6 +114,15 @@ class Topic < ApplicationRecord
     Setting.node_ids_hide_in_topics_index.to_s.split(",").collect(&:to_i)
   end
 
+  def score_incr_by(action)
+    return unless score = { hit: HIT_SCORE, reply: REPLY_SCORE }[action]
+
+    time = Time.current
+    daily_scores.incr(time.beginning_of_hour.to_i, score)
+    weekly_scores.incr(time.beginning_of_day.to_i, score)
+    tap_times[id] = time.to_i
+  end
+
   def self.daily_ranks
     sorted_topics(daily_ranks.members.reverse)
   end
@@ -130,42 +139,38 @@ class Topic < ApplicationRecord
   end
   private_class_method :sorted_topics
 
-  def self.calc_daily_ranks
-    daily_tapped_topic_ids = tap_times.rangebyscore(1.day.ago.to_i, Time.current.to_i)
-
-    where(id: daily_tapped_topic_ids).each(&:calc_daily_rank)
+  def self.calc_daily_ranks(now = Time.current)
+    find(tapped_topic_ids(1.day.ago, now)).each { |topic| topic.calc_daily_rank(now) }
   end
 
-  def self.calc_weekly_ranks
-    weekly_tapped_topic_ids = tap_times.rangebyscore(1.week.ago.to_i, Time.current.to_i)
-
-    where(id: weekly_tapped_topic_ids).each(&:calc_weekly_rank)
+  def self.calc_weekly_ranks(now = Time.current)
+    find(tapped_topic_ids(1.week.ago, now)).each { |topic| topic.calc_weekly_rank(now) }
   end
 
-  def calc_daily_rank
-    hours = (1..24).map { |i| (Time.current.beginning_of_hour-i.hour).to_i.to_s  }
+  def self.tapped_topic_ids(from, to)
+    tap_times.rangebyscore(from.to_i, to.to_i)
+  end
+  private_class_method :tapped_topic_ids
 
-    score = daily_scores.bulk_get(*hours).values.reverse.compact.map.with_index(1) { |e, i| e.to_i * i }.sum
-
+  def calc_daily_rank(now)
+    hours = (1..24).map { |i| (now.beginning_of_hour - i.hour).to_i.to_s  }
+    score = calc_score(daily_scores, hours)
     daily_ranks[id] = score
   end
 
-  def calc_weekly_rank
-    days = (1..7).map { |i| (Time.current.beginning_of_day-i.day).to_i.to_s  }
-
-    score = weekly_scores.bulk_get(*days).values.reverse.compact.map.with_index(1) { |e, i| e.to_i * i }.sum
-
+  def calc_weekly_rank(now)
+    days = (1..7).map { |i| (now.beginning_of_day - i.day).to_i.to_s  }
+    score = calc_score(weekly_scores, days)
     weekly_ranks[id] = score
   end
 
-  def score_incr_by(action)
-    return unless score = { hit: HIT_SCORE, reply: REPLY_SCORE }[action]
+  private
 
-    time = Time.current
-    daily_scores.incr(time.beginning_of_hour.to_i, score)
-    weekly_scores.incr(time.beginning_of_day.to_i, score)
-    tap_times[id] = time.to_i
-  end
+    def calc_score(score_object, timestamps)
+      score_object.bulk_get(*timestamps).values.reverse.compact.map.with_index(1) { |e, i| e.to_i * i }.sum
+    end
+
+  public
 
   before_save :store_cache_fields
   def store_cache_fields
