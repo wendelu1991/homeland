@@ -146,3 +146,5 @@ group :development, :test do
 
   gem 'codecov', require: false
 end
+
+gem 'whenever', :require => false
