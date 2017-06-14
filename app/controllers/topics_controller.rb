@@ -62,15 +62,13 @@ class TopicsController < ApplicationController
 
   # weekly rank
   def weekly
-    @topics = Topic.weekly_rank
-    @topics = @topics.page(params[:page])
+    @topics = Topic.weekly_ranks.page(params[:page])
     render action: "index"
   end
 
   # daily rank
   def daily
-    @topics = Topic.daily_rank
-    @topics = @topics.page(params[:page])
+    @topics = Topic.daily_ranks.page(params[:page])
     render action: "index"
   end
 

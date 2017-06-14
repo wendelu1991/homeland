@@ -114,13 +114,21 @@ class Topic < ApplicationRecord
     Setting.node_ids_hide_in_topics_index.to_s.split(",").collect(&:to_i)
   end
 
-  def self.daily_rank
-    @topics = Topic.order(id: :asc).limit(10) ##_ modify later
+  def self.daily_ranks
+    sorted_topics(daily_ranks.members.reverse)
   end
 
-  def self.weekly_rank
-    @topics = Topic.limit(10) ##_ modify later
+  def self.weekly_ranks
+    sorted_topics(weekly_ranks.members.reverse)
   end
+
+  def self.sorted_topics(sorted_ids)
+    topics = find(sorted_ids)
+    topics_hash = topics.each_with_object({}) { |topic, t_hash| t_hash[topic.id] = topic }
+    sorted_topics = sorted_ids.map { |id| topics_hash[id] }
+    Kaminari.paginate_array(sorted_topics)
+  end
+  private_class_method :sorted_topics
 
   def self.calc_daily_ranks
     daily_tapped_topic_ids = tap_times.rangebyscore(1.day.ago.to_i, Time.current.to_i)
