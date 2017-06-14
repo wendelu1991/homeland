@@ -38,6 +38,7 @@ class Topic < ApplicationRecord
   hash_key :weekly_scores
   sorted_set :daily_ranks, global: true
   sorted_set :weekly_ranks, global: true
+  sorted_set :tap_times, global: true
 
   delegate :login, to: :user, prefix: true, allow_nil: true
   delegate :body, to: :last_reply, prefix: true, allow_nil: true
@@ -121,6 +122,18 @@ class Topic < ApplicationRecord
     @topics = Topic.limit(10) ##_ modify later
   end
 
+  def self.calc_daily_ranks
+    daily_tapped_topic_ids = tap_times.rangebyscore(1.day.ago.to_i, Time.current.to_i)
+
+    where(id: daily_tapped_topic_ids).each(&:calc_daily_rank)
+  end
+
+  def self.calc_weekly_ranks
+    weekly_tapped_topic_ids = tap_times.rangebyscore(1.week.ago.to_i, Time.current.to_i)
+
+    where(id: weekly_tapped_topic_ids).each(&:calc_weekly_rank)
+  end
+
   def calc_daily_rank
     hours = (1..24).map { |i| (Time.current.beginning_of_hour-i.hour).to_i.to_s  }
 
@@ -139,8 +152,11 @@ class Topic < ApplicationRecord
 
   def score_incr_by(action)
     return unless score = { hit: HIT_SCORE, reply: REPLY_SCORE }[action]
-    daily_scores.incr(Time.current.beginning_of_hour.to_i, score)
-    weekly_scores.incr(Time.current.beginning_of_day.to_i, score)
+
+    time = Time.current
+    daily_scores.incr(time.beginning_of_hour.to_i, score)
+    weekly_scores.incr(time.beginning_of_day.to_i, score)
+    tap_times[id] = time.to_i
   end
 
   before_save :store_cache_fields
