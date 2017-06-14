@@ -32,4 +32,4 @@ v1 上1个小时帖子浏览数，p1 上1个小时帖子回复数，依次类推
 - 计算排名：定时任务会执行 `Topic.calc_weekly_ranks` 和 `Topic.calc_daily_ranks`，并将计算好的排名结果分别存放到 `daily_ranks` 和 `weekly_ranks` 中。
     + `daily_ranks` 存储了成员 `topic_id` 和他之前24小时的总分数。
     + `weekly_ranks` 存储了成员 `topic_id` 和他之前7天的总分数。
-- 获取排名：通过调用 `Topic.daily_ranks` 和 `Topic.weekly_ranks`。
+- 获取排名：通过调用 `Topic.daily_rank` 和 `Topic.weekly_rank`。

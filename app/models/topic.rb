@@ -123,11 +123,11 @@ class Topic < ApplicationRecord
     tap_times[id] = time.to_i
   end
 
-  def self.daily_ranks
+  def self.daily_rank
     sorted_topics(daily_ranks.members.reverse)
   end
 
-  def self.weekly_ranks
+  def self.weekly_rank
     sorted_topics(weekly_ranks.members.reverse)
   end
 
