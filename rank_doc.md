@@ -26,7 +26,7 @@ v1 上1个小时帖子浏览数，p1 上1个小时帖子回复数，依次类推
 
 - 增加得分：每当用户浏览或创建评论时会调用 `Topic#score_incr_by` 来增加当前话题的分数`score`
     + `daily_scores` 存储`Topic`每小时的得分，键为`now.beginning_of_hour.to_i`，值为`score` 
-    + `weekly_scores` 存储`Topic`每天的得分，键为`now.beginning_of_day.to_i`，值为`score
+    + `weekly_scores` 存储`Topic`每天的得分，键为`now.beginning_of_day.to_i`，值为`score`
 - 记录活跃话题：用来计算参加排名的话题。
     + `tap_times` 存储了`Topic`的最新被最后浏览或评论的时间，成员为`topic_id`，分数为`now.to_i`
 - 计算排名：定时任务会执行 `Topic.calc_weekly_ranks` 和 `Topic.calc_daily_ranks`，并将计算好的排名结果分别存放到 `daily_ranks` 和 `weekly_ranks` 中。
