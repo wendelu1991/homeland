@@ -153,21 +153,25 @@ class Topic < ApplicationRecord
   private_class_method :tapped_topic_ids
 
   def calc_daily_rank(now)
-    hours = (1..24).map { |i| (now.beginning_of_hour - i.hour).to_i.to_s  }
-    score = calc_score(daily_scores, hours)
-    daily_ranks[id] = score
+    daily_ranks[id] = calc_score(daily_scores, day_hours(now))
   end
 
   def calc_weekly_rank(now)
-    days = (1..7).map { |i| (now.beginning_of_day - i.day).to_i.to_s  }
-    score = calc_score(weekly_scores, days)
-    weekly_ranks[id] = score
+    weekly_ranks[id] = calc_score(weekly_scores, week_days(now))
   end
 
   private
 
     def calc_score(score_object, timestamps)
       score_object.bulk_get(*timestamps).values.reverse.compact.map.with_index(1) { |e, i| e.to_i * i }.sum
+    end
+
+    def day_hours(now)
+      @day_hours ||= (1..24).map { |i| (now.beginning_of_hour - i.hour).to_i.to_s }
+    end
+
+    def week_days(now)
+      @week_days ||= (1..7).map { |i| (now.beginning_of_day - i.day).to_i.to_s }
     end
 
   public
